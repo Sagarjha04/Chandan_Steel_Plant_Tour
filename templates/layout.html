@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ session.get('theme', 'light') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Security QR Tracker</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/logout.css') }}">
+    <!-- Inject styling properties for custom pop-up alerts messaging layout sheets -->
+    
+</head>
+<body>
+
+    <!-- Upper Brand Bar Area -->
+    <header style="background: #ffffff; padding: 10px 20px; border-bottom: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
+            <img src="{{ url_for('static', filename='images/logo-floated.png') }}" alt="System Logo" style="height: 45px;">
+            
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span id="live-timestamp" style="font-size: 14px; font-weight: bold; color: #475569; font-family: monospace;"></span>
+                
+                <!-- Theme and navigation actions display conditionally if a session parameter is active -->
+                {% if 'user_id' in session or 'admin_user' in session %}
+                   
+                    
+                    {% if 'admin_user' in session %}
+                        <a href="{{ url_for('admin_logout') }}" style="color: #ef4444; text-decoration: none; font-weight: bold; font-size: 14px;">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('logout') }}" style="color: #ef4444; text-decoration: none; font-weight: bold; font-size: 14px;">Logout</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Error/Success Alerts Messaging Area -->
+    <div style="max-width: 1200px; margin: 20px auto 0 auto; padding: 0 20px;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, msg in messages %}
+                    <div class="alert-message {% if category == 'error' or category == 'exists' %}alert-danger{% else %}alert-success{% endif %}">
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Yield Child Templates Context -->
+    <main style="max-width: 1200px; margin: 0 auto; padding: 20px; min-height: 70vh;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- System JavaScript Client Runtime Operations -->
+    <script>
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('live-timestamp').innerText = "System Time: " + now.toLocaleString();
+        }
+        setInterval(updateTimestamp, 1000);
+        updateTimestamp();
+    </script>
+</body>
+</html>

@@ -1,0 +1,442 @@
+{% extends "layout.html" %}
+{% block content %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker Historic Activity Ledger - {{ current_report.user_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/user_view.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom_modals.css') }}">
+
+    <style>
+        /* Document Canvas Base Styling Rules Override */
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+        
+        /* Layout Structure Spacing Compensation Matrix */
+        .audit-card { max-width: 1200px; background: #ffffff; margin: 145px auto 65px auto; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; overflow: hidden; }
+        
+        .header { background: #0f172a; padding: 24px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0; font-size: 20px; font-weight: 700; }
+        .badge-container { display: flex; gap: 10px; }
+        .badge { background: #1e293b; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; border: 1px solid #334155; color: #f8fafc; }
+        
+        /* 🔍 DEAD-CENTERED SEARCH & CALENDAR CONTROL RIBBON THEME */
+        .search-control-ribbon { background: #1a1d24; padding: 14px 24px; border-bottom: 2px solid #007bff; display: grid; grid-template-columns: 120px 1fr 180px; align-items: center; box-sizing: border-box; width: 100%; gap: 15px; }
+        .filter-controls-group-center { display: flex; gap: 12px; justify-content: center; align-items: center; width: 100%; }
+        
+        /* Compact Search Box Width Constraint Style Configuration */
+        .search-input-field { width: 100%; max-width: 250px; padding: 10px 14px; background: #0f172a; border: 1px solid #007bff; border-radius: 6px; color: #ffffff; font-size: 13px; font-weight: 600; outline: none; box-sizing: border-box; font-family: sans-serif; }
+        .search-input-field::placeholder { color: #64748b; font-weight: 500; }
+        
+        /* Calendar Specific Style Rules */
+        .calendar-input-field { padding: 9px 12px; background: #0f172a; border: 1px solid #007bff; border-radius: 6px; color: #ffffff; font-size: 13px; font-weight: 600; outline: none; box-sizing: border-box; cursor: pointer; color-scheme: dark; font-family: monospace; }
+        
+        /* Standard Action Buttons System */
+        .search-action-btn { padding: 10px 20px; background: #007bff; color: #ffffff; font-size: 13px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; transition: background 0.15s ease; font-family: sans-serif; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+        .search-action-btn:hover { background: #0056b3; }
+        
+        .dismiss-action-btn { padding: 10px 20px; background: #64748b; color: #ffffff; font-size: 13px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; transition: background 0.15s ease; font-family: sans-serif; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+        .dismiss-action-btn:hover { background: #475569; }
+    </style>
+
+    <!-- 🏢 UNIFIED SCREEN-FROZEN TOP CONTROL HEADER CONSOLE BAR -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; background: #1e2229; z-index: 9997; border-bottom: 3px solid #007bff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; width: 100%; box-sizing: border-box;">
+        <div class="control-header" style="height: 75px; padding: 5px 25px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; box-sizing: border-box; width: 100%;">
+            
+            <!-- Left Section Block: Corporate Logo Asset -->
+            <div style="display: flex; justify-content: flex-start; align-items: center;">
+                <div style="background: #f8fafcf6; padding: 4px 8px; border-radius: 8px; border: 1px solid #007bff; display: inline-flex; align-items: center; justify-content: center; height: 56px; box-sizing: border-box;">
+                    <img src="{{ url_for('static', filename='images/logo-floated.png') }}" alt="Chandan Steel Enterprise Logo" style="height: 42px; max-width: 100%; display: block; object-fit: contain;">
+                </div>
+            </div>
+            
+            <!-- Middle Section Block: High-Contrast 3D Title -->
+            <div style="display: flex; justify-content: center; align-items: center; padding-top: 10px; box-sizing: border-box;">
+                <h2 style="margin: 0; font-size: 36px; color: #ffffff; font-weight: 900; font-family: 'Arial Black', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; text-align: center; white-space: nowrap;
+                           text-shadow: 1px 1px 0px #007bff, 2px 2px 0px #0056b3, 3px 3px 0px #004085, 4px 4px 5px rgba(0, 0, 0, 0.6);">
+                    Chandan Steel Plant Tour
+                </h2>
+            </div>
+            
+            <!-- Right Section Block: Size-Adaptive Metadata Capsule Box -->
+            <div style="display: flex; justify-content: flex-end; align-items: center; padding-top: 2px; box-sizing: border-box;">
+                <div style="background: #eff0f1; padding: 6px 14px; border-radius: 8px; border: 1px solid #007bff; display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; height: auto; width: max-content; box-sizing: border-box; text-align: left; gap: 0px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);">
+                    <div style="display: flex; flex-direction: column; text-align: left; gap: 1px; line-height: 1.2; padding-top: 4px; box-sizing: border-box;">
+                        <small style="font-size: 10px; color: #38bdf8; font-family: sans-serif; text-transform: uppercase; font-weight: 800; letter-spacing: 0.3px; white-space: nowrap;">
+                            Operator User ID: <strong style="color: #0a7bec; font-family: monospace; font-size: 11px; font-weight: 700;">{{ session['admin_user'] if session['admin_user'] else 'SYSTEM_AUDIT' }}</strong>
+                        </small>
+                        <small style="font-size: 10px; color: #38bdf8; font-family: sans-serif; text-transform: uppercase; font-weight: 800; letter-spacing: 0.3px; white-space: nowrap;">
+                            Node Boundary Profile: <strong style="color: #0326ec; font-family: monospace; font-size: 11px; font-weight: 700;">{{ session['admin_plant'] if session['admin_plant'] else 'ALL' }}</strong>
+                        </small>
+                    </div>
+                    <div style="width: 100%; height: 1px; background: #cbd5e1; margin: 4px 0;"></div>
+                    <div class="header-action-links" style="width: 100%; line-height: 1; padding-bottom: 4px;">
+                         <a href="{{ url_for('admin_logout') }}" class="logout-link-btn" style="background: transparent; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; font-family: sans-serif; color: #ef4444; text-decoration: none; display: block; text-align: left; transition: color 0.15s ease;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#ef4444'">
+                             Secure Terminal Logout →
+                         </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="height: 50px; background: #1a1d24; border-top: 1px solid #1f1d1d; width: 100%;"></div>
+    </div>
+    <div class="audit-card">
+        <!-- Main Top Bar Banner -->
+        <div class="header">
+            <h2>⚙️ Detailed Security Audit Workspace</h2>
+            <div class="badge-container">
+                <div class="badge" id="audit-target-worker-id">Employee ID: {{ current_report.user_id }}</div>
+                <div class="badge">Operator: {{ current_report.user_name }}</div>
+            </div>
+        </div>
+
+        <!-- 🔍 3-COLUMN STRUCTURAL SYMMETRIC BAR LAYOUT: Left-aligns Calendar, Dead-Centers Search Suite, Right-aligns Dismiss -->
+        <div class="search-control-ribbon">
+            
+            <!-- Column 1: Left-aligned date selector input box element -->
+            <div style="display: flex; justify-content: flex-start; align-items: center;">
+                <input type="date" id="terminal-date-picker-input" class="calendar-input-field" title="Isolate logs by shift date">
+            </div>
+            
+            <!-- Column 2: 100% DEAD-CENTERED QUERY FILTER CONTROL GROUP MODULE -->
+            <div class="filter-controls-group-center">
+                <span style="font-size: 13px; font-weight: 700; color: #94a3b8; font-family: sans-serif; text-transform: uppercase; letter-spacing: 0.3px;">🔍 Master Ledger Search:</span>
+                <input type="text" id="terminal-realtime-search-input" class="search-input-field" placeholder="Search by Plant / Checkpoint Name...">
+                <button type="button" class="search-action-btn" onclick="executeClientSideLedgerFilter()">Filter Logs</button>
+            </div>
+            
+            <!-- Column 3: Right-aligned shortcut close window dismissal trigger button link -->
+            <div style="display: flex; justify-content: flex-end; align-items: center;">
+                <button type="button" class="dismiss-action-btn" onclick="window.close();">Dismiss Window</button>
+            </div>
+        </div>
+
+        <!-- EXPANDED COMPLIANCE BANNER RIBBON STRIP -->
+        <div class="summary-banner" style="display: flex; flex-direction: column; gap: 12px; padding: 20px 35px; background: #eff6ff; border-left: 5px solid #3b82f6;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span>📊 Profile Lifetime Checked Transactions: <strong id="lifetime-total-count-display">{{ total_count }} Records</strong></span>
+                <span style="font-size: 13px; font-weight: normal; color: #475569;">Chronological log matrix ordered day-by-day</span>
+            </div>
+            
+            <!-- ADMIN COMPLIANCE AUDIT INDICATOR -->
+            <div style="width: 100%; border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 4px;">
+                {% if timeline.keys()|length > 0 %}
+                    <!-- Safely isolate the single most recent date log group -->
+                    {% set raw_first_date = (timeline.keys() | list)[0] %}
+                    
+                    <!-- Format string conversion parameters from YYYY-MM-DD into DD-MM-YYYY -->
+                    {% set date_segments = raw_first_date.split('-') %}
+                    {% set formatted_selected_date = date_segments[2] ~ '-' ~ date_segments[1] ~ '-' ~ date_segments[0] %}
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 14px; font-weight: 600; color: #0f172a;">
+                            📋 Latest Operational Shift Evaluation Date: <span style="font-family: monospace; color: #3b82f6; font-weight: 800;">{{ formatted_selected_date }}</span>
+                        </div>
+                        
+                        <!-- 🟢 FIXED ATTENDANCE VERIFICATION CORE LOGIC BLOCK -->
+                        {% set current_day_scans_count = timeline[raw_first_date]|length %}
+                        {% if allocated_count > 0 and current_day_scans_count >= allocated_count %}
+                            <div style="background: #d1fae5; color: #065f46; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 20px; font-family: monospace; letter-spacing: 0.5px; text-transform: uppercase;">
+                                🎯 SHIFT VERIFIED: PRESENT
+                            </div>
+                        {% else %}
+                            <div style="background: #fee2e2; color: #991b1b; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 20px; font-family: monospace; letter-spacing: 0.5px; text-transform: uppercase;">
+                                ⚠️ MISSING CHECKPOINTS: ABSENT
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Grouped Day-by-Day Historical Timeline Loops -->
+        {% for date, scans in timeline.items() %}
+        {% set loop_date_segments = date.split('-') %}
+        {% set display_loop_date = loop_date_segments[2] ~ '-' ~ loop_date_segments[1] ~ '-' ~ loop_date_segments[0] %}
+        <div class="day-group" id="day-timeline-group-node-{{ date }}">
+            <div class="day-header">
+                <span>📅 Inspection Timeline Group: <strong>{{ display_loop_date }}</strong></span>
+                <span class="day-counter"><span id="group-badge-counter-{{ date }}">{{ scans|length }}</span> Logged Transactions</span>
+            </div>
+            
+            {% for scan in scans %}
+                <div class="scan-instance {% if scan.report_id == current_report.report_id %}highlighted-target{% endif %}" id="ledger-scan-row-node-{{ scan.report_id }}">
+
+                    <button type="button" class="btn-delete-log" onclick="triggerLedgerRecordPurge('{{ scan.report_id }}', '{{ date }}')">
+                        🗑️ Delete Log
+                    </button>
+
+                    {% if scan.report_id == current_report.report_id %}
+                        <div class="target-indicator">📌 Current Selected Audit Log</div>
+                    {% endif %}
+                    
+                    <div class="grid-section">
+                        <div class="info-block">
+                            <label>Report Reference Number</label>
+                            <span>#{{ scan.report_id }}</span>
+                        </div>
+                        <div class="info-block">
+                            <label>Assigned Plant Area</label>
+                            <span class="plant-name-text-string-node" style="font-weight: 600; color: #1e293b;">{{ scan.plant_name }}</span>
+                        </div>
+                        <div class="info-block">
+                            <label>Checkpoint Payload Detail</label>
+                            <span style="font-family: monospace; font-size: 12px; color: #3b82f6;">{{ scan.Qr_code_scaning_detail or 'N/A' }}</span>
+                        </div>
+                        <div class="info-block">
+                            <label>Scanned Timestamp</label>
+                            <span>{{ scan.Qr_code_scaning_time_at }}</span>
+                        </div>
+                    </div>
+
+                    <div class="remark-box">
+                        <p><strong>Operational Checklist Remarks:</strong> {{ scan.Remark_of_Point or 'No extra point observations documented for this check.' }}</p>
+                    </div>
+                    <!-- REPAIRED DIRECT UNALTERED DATABASE MEDIA RENDERING GRID -->
+                    <div class="media-grid">
+                        
+                        <!-- Box A: Live Verification Photo -->
+                        <div class="media-box">
+                            <h4>📷 1. Live Verification Photo</h4>
+                            <div class="media-wrapper">
+                                {% if scan.Live_photo and scan.Live_photo.strip() != "" %}
+                                    <img src="{{ scan.Live_photo }}" alt="Live Verification Frame" onerror="if(!this.src.startsWith('data:')){ this.style.display='none'; this.nextElementSibling.style.display='block'; }">
+                                    <span class="no-media" style="display:none; padding: 10px; color:#ef4444; font-size:11px;">⚠️ Disk Asset File Missing at Route:<br><code>{{ scan.Live_photo }}</code></span>
+                                {% else %}
+                                    <span class="no-media">⚠️ No Media Path Recorded in Database Row</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Box B: Point Inspection Photo -->
+                        <div class="media-box">
+                            <h4>🏗️ 2. Point Inspection Photo</h4>
+                            <div class="media-wrapper">
+                                {% if scan.Live_current_point_photo and scan.Live_current_point_photo.strip() != "" %}
+                                    <img src="{{ scan.Live_current_point_photo }}" alt="Current Point Frame" onerror="if(!this.src.startsWith('data:')){ this.style.display='none'; this.nextElementSibling.style.display='block'; }">
+                                    <span class="no-media" style="display:none; padding: 10px; color:#ef4444; font-size:11px;">⚠️ Disk Asset File Missing at Route:<br><code>{{ scan.Live_current_point_photo }}</code></span>
+                                {% else %}
+                                    <span class="no-media">⚠️ No Media Path Recorded in Database Row</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Box C: Area Safety Short Video Stream -->
+                        <div class="media-box">
+                            <h4>📹 3. Area Safety Short Video</h4>
+                            <div class="media-wrapper">
+                                {% if scan.Live_area_short_video and scan.Live_area_short_video.strip() != "" %}
+                                    <video controls preload="metadata" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                        <source src="{{ scan.Live_area_short_video }}" type="video/mp4">
+                                        <source src="{{ scan.Live_area_short_video }}" type="video/webm">
+                                        Browser media playback unsupported.
+                                    </video>
+                                    <span class="no-media" style="display:none; padding: 10px; color:#ef4444; font-size:11px;">⚠️ Disk Video Missing at Route:<br><code>{{ scan.Live_area_short_video }}</code></span>
+                                {% else %}
+                                    <span class="no-media">⚠️ No Media Path Recorded in Database Row</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <footer style="position: fixed; bottom: 0; left: 0; right: 0; height: 38px; background: #1e2229; padding: 0 25px; border-top: 3px solid #007bff; font-family: sans-serif; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 9998; box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.25);">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 4px; color: #94a3b8; flex: 1; justify-content: flex-start;">
+            © 2026 <span style="color: #007bff; font-weight: 800; margin: 0 2px;">Chandan Steel Plant Tour</span>
+        </div>
+    
+        <!-- Center-Aligned Powered By Section -->
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.2px; color: #94a3b8; flex: 1; text-align: center;">
+            Powered by 94sk04 All Rights Reserved.
+        </div>
+    
+        <!-- Right Aligned Section: Screen-Frozen Dark High-Contrast Terminal Clock Box -->
+        <div style="display: flex; justify-content: flex-end; flex: 1;">
+            <div
+                style="background: #0f172a; padding: 5px 12px; border-radius: 6px; border: 1px solid #007bff; display: inline-flex; align-items: center; gap: 8px;">
+                <span
+                    style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">System
+                    Terminal Time:</span>
+                <strong id="frozen-footer-terminal-clock"
+                    style="font-size: 13px; color: #f8fafc; font-family: monospace; font-weight: 800;">3/8/2026, 2:57:04
+                    pm</strong>
+            </div>
+        </div>
+    </footer>
+
+    <div style="height: 65px; width: 100%;"></div>
+<!-- ASYNCHRONOUS ASSET PURGING & MODERN CENTER MODALS ENGINE SCRIPT -->
+<script>
+const CustomModalOverlayEngine = {
+    spawnConfirm: function(reportId, onConfirmCallback) {
+        this.dismiss();
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-modal-overlay';
+        overlay.id = 'dynamic-factory-alert-overlay';
+        overlay.innerHTML = `
+            <div class="custom-modal-box">
+                <div class="modal-icon-badge">⚠️</div>
+                <h3 class="modal-content-title">Confirm Record Deletion</h3>
+                <p class="modal-content-desc">Are you absolutely sure you want to delete Report Entry #${reportId} permanently from the database ledger columns?</p>
+                <div class="modal-btn-grid">
+                    <button type="button" class="modal-action-btn modal-btn-cancel" onclick="CustomModalOverlayEngine.dismiss()">Cancel Action</button>
+                    <button type="button" class="modal-action-btn modal-btn-confirm" id="modal-confirm-action-trigger">Delete Record</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        setTimeout(() => overlay.classList.add('modal-active-state'), 30);
+        document.getElementById('modal-confirm-action-trigger').onclick = () => {
+            this.dismiss();
+            onConfirmCallback();
+        };
+    },
+    spawnSuccess: function(msg) {
+        this.dismiss();
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-modal-overlay';
+        overlay.id = 'dynamic-factory-alert-overlay';
+        overlay.innerHTML = `
+            <div class="custom-modal-box profile-success">
+                <div class="modal-icon-badge">✅</div>
+                <h3 class="modal-content-title">Action Complete</h3>
+                <p class="modal-content-desc">${msg}</p>
+                <button type="button" class="modal-action-btn" onclick="CustomModalOverlayEngine.dismiss()">Dismiss Notification</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        setTimeout(() => overlay.classList.add('modal-active-state'), 30);
+    },
+    dismiss: function() {
+        const modal = document.getElementById('dynamic-factory-alert-overlay');
+        if (modal) {
+            modal.classList.remove('modal-active-state');
+            setTimeout(() => { if(modal.parentNode) modal.remove(); }, 250);
+        }
+    }
+};
+
+function triggerLedgerRecordPurge(reportId, dateGroupStr) {
+    CustomModalOverlayEngine.spawnConfirm(reportId, () => {
+        executeSecureAsynchronousPurge(reportId, dateGroupStr);
+    });
+}
+
+function executeSecureAsynchronousPurge(reportId, dateGroupStr) {
+    fetch(`/admin/delete_report/${reportId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const targetRow = document.getElementById(`ledger-scan-row-node-${reportId}`);
+            if (targetRow) {
+                targetRow.style.transition = "all 0.3s ease";
+                targetRow.style.opacity = "0";
+                targetRow.style.transform = "scale(0.95)";
+                
+                setTimeout(() => {
+                    targetRow.remove();
+                    const groupBadge = document.getElementById(`group-badge-counter-${dateGroupStr}`);
+                    const groupParentContainer = document.getElementById(`day-timeline-group-node-${dateGroupStr}`);
+                    
+                    if (groupBadge && groupParentContainer) {
+                        let dynamicRemainingCount = parseInt(groupBadge.innerText) - 1;
+                        groupBadge.innerText = dynamicRemainingCount;
+                        if (dynamicRemainingCount <= 0) {
+                            groupParentContainer.remove();
+                        }
+                    }
+                    const lifetimeDisplay = document.getElementById("lifetime-total-count-display");
+                    if (lifetimeDisplay) {
+                        let activeVal = parseInt(lifetimeDisplay.innerText.replace(/[^0-9]/g, '')) - 1;
+                        lifetimeDisplay.innerHTML = `<strong>${activeVal} Records</strong>`;
+                    }
+                    CustomModalOverlayEngine.spawnSuccess(`Record Log Entry #${reportId} removed successfully.`);
+                }, 300);
+            }
+        } else {
+            alert(`Deletion Pipeline Warning: ${data.message}`);
+        }
+    })
+    .catch(err => { alert("Server transmission failure."); });
+}
+
+function executeClientSideLedgerFilter() {
+    const textQueryValue = document.getElementById('terminal-realtime-search-input').value.trim().toLowerCase();
+    const staticWorkerId = document.getElementById('audit-target-worker-id').innerText.replace(/[^0-9]/g, '').trim().toLowerCase();
+    const rawCalendarDateValue = document.getElementById('terminal-date-picker-input').value.trim();
+    
+    const timelineDayGroups = document.querySelectorAll('.day-group');
+    
+    timelineDayGroups.forEach(groupBlock => {
+        const currentGroupDateString = groupBlock.id.replace('day-timeline-group-node-', '').trim();
+        const isCalendarMatchingThisGroup = (rawCalendarDateValue === "" || currentGroupDateString === rawCalendarDateValue);
+        
+        const structuralRowRecords = groupBlock.querySelectorAll('.scan-instance');
+        let visibleRowsInThisGroupCounter = 0;
+        
+        structuralRowRecords.forEach(row => {
+            const plantLabelNode = row.querySelector('.plant-name-text-string-node');
+            const plantNameText = plantLabelNode ? plantLabelNode.innerText.trim().toLowerCase() : '';
+            const isTextMatchingThisRow = (textQueryValue === "" || plantNameText.includes(textQueryValue) || staticWorkerId.includes(textQueryValue));
+            
+            if (isCalendarMatchingThisGroup && isTextMatchingThisRow) {
+                row.style.display = "block";
+                visibleRowsInThisGroupCounter++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+        
+        if (visibleRowsInThisGroupCounter > 0) {
+            groupBlock.style.display = "block";
+        } else {
+            groupBlock.style.display = "none";
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const footerClockDisplayNode = document.getElementById('frozen-footer-terminal-clock');
+    const liveSearchInput = document.getElementById('terminal-realtime-search-input');
+    const liveCalendarInput = document.getElementById('terminal-date-picker-input');
+    
+    if (liveCalendarInput) {
+        const todayInstance = new Date();
+        const yyyy = todayInstance.getFullYear();
+        let mm = todayInstance.getMonth() + 1;
+        let dd = todayInstance.getDate();
+        if (mm < 10) mm = '0' + mm;
+        if (dd < 10) dd = '0' + dd;
+        const todayFormattedString = `${yyyy}-${mm}-${dd}`;
+        liveCalendarInput.setAttribute('max', todayFormattedString);
+    }
+
+    function runLiveFrozenFooterClock() {
+        if (!footerClockDisplayNode) return;
+        const timeNow = new Date();
+        const currentDay = timeNow.getDate();
+        const currentMonth = timeNow.getMonth() + 1;
+        const currentYear = timeNow.getFullYear();
+        const combinedDateString = `${currentDay}/${currentMonth}/${currentYear}`;
+        const combinedTimeString = timeNow.toLocaleTimeString('en-US', { hour12: true }).toLowerCase();
+        footerClockDisplayNode.innerText = `${combinedDateString}, ${combinedTimeString}`;
+    }
+    runLiveFrozenFooterClock();
+    setInterval(runLiveFrozenFooterClock, 1000);
+    
+    if (liveSearchInput) {
+        liveSearchInput.addEventListener('keyup', executeClientSideLedgerFilter);
+        liveSearchInput.addEventListener('input', executeClientSideLedgerFilter);
+    }
+    if (liveCalendarInput) {
+        liveCalendarInput.addEventListener('change', executeClientSideLedgerFilter);
+    }
+});
+</script>
+{% endblock %}

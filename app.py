@@ -1,5 +1,6 @@
 import os
 import io
+import mysql.connector
 import base64
 import cv2
 import numpy as np
@@ -8,6 +9,7 @@ import mysql.connector
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, abort
 from pyzbar.pyzbar import decode
 from werkzeug.utils import secure_filename
+from flask_mysqldb import MySQL
 
 app = Flask(__name__)
 app.secret_key = 'super_secure_factory_production_key_token'

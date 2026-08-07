@@ -1,0 +1,12 @@
+Flask
+Flask-MySQLdb
+mysqlclient
+mysql-connector-python
+numpy
+opencv-python
+Pillow
+pyzbar
+qrcode
+requests
+cryptography
+pyOpenSSL

@@ -16,11 +16,13 @@ app.secret_key = 'super_secure_factory_production_key_token'
 
 # Database Server Configurations
 db_config = {
-    'host': 'a2nlmysql49plsk.secureserver.net:3306',
+    'host': 'a2nlmysql49plsk.secureserver.net',
+    'port': 3306,
     'user': 'ph14842273806',
     'password': 'March@2020#',
     'database': 'factory_db'
 }
+
 
 # --- Local Storage Directory forced inside the Flask public static tree ---
 UPLOAD_FOLDER = os.path.join('static', 'uploads')

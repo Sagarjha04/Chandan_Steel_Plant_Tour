@@ -16,10 +16,10 @@ app.secret_key = 'super_secure_factory_production_key_token'
 
 # Database Server Configurations
 db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'factory_db2'
+    'host': 'a2nlmysql49plsk.secureserver.net:3306',
+    'user': 'export',
+    'password': 'March@2020#',
+    'database': 'factory_db'
 }
 
 # --- Local Storage Directory forced inside the Flask public static tree ---

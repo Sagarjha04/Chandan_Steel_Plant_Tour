@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Attendance Sheet - Node #{{ data.user_id }}</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom_modals.css') }}">
+    <style>
+        :root { --slate-900: #0f172a; --slate-200: #e2e8f0; --emerald: #10b981; --crimson: #ef4444; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* Layout Structure Spacing Compensation Matrix */
+        .sheet-card { max-width: 750px; background: #ffffff; margin: 145px auto 65px auto; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid var(--slate-200); overflow: hidden; }
+        
+        .header { background: var(--slate-900); padding: 24px; color: white; text-align: center; }
+        .header h2 { margin: 0; font-size: 20px; font-weight: 700; }
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 24px; background: #fafafa; }
+        .info-cell { background: #ffffff; padding: 14px; border-radius: 8px; border: 1px solid var(--slate-200); }
+        .info-cell label { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
+        .info-cell span { font-size: 15px; font-weight: 600; }
+        .list-section { padding: 24px; }
+        .list-title { font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 12px; }
+        .token-item { display: inline-block; padding: 6px 12px; margin: 4px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+        .token-item.scanned-token { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .token-item.missing-token { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .card-footer { padding: 20px; text-align: center; background: #fafafa; border-top: 1px solid var(--slate-200); }
+        .btn-dismiss { padding: 10px 24px; background: #475569; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        
+        .stamp-box-shared { padding: 22px 15px; text-align: center; font-size: 16px; font-weight: 800; }
+        .stamp-box-present { background: #d1fae5; color: #065f46; border-bottom: 4px solid #10b981; }
+        .stamp-box-absent { background: #fee2e2; color: #991b1b; border-bottom: 4px solid #ef4444; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <!-- 🏢 UNIFIED SCREEN-FROZEN TOP CONTROL HEADER CONSOLE BAR -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; background: #1e2229; z-index: 9997; border-bottom: 3px solid #007bff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; width: 100%; box-sizing: border-box;">
+        <div class="control-header" style="height: 75px; padding: 5px 25px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; box-sizing: border-box; width: 100%;">
+            
+            <!-- Left Section Block: Corporate Logo Asset -->
+            <div style="display: flex; justify-content: flex-start; align-items: center;">
+                <div style="background: #f8fafcf6; padding: 4px 8px; border-radius: 8px; border: 1px solid #007bff; display: inline-flex; align-items: center; justify-content: center; height: 56px; box-sizing: border-box;">
+                    <img src="{{ url_for('static', filename='images/logo-floated.png') }}" alt="Chandan Steel Enterprise Logo" style="height: 42px; max-width: 100%; display: block; object-fit: contain;">
+                </div>
+            </div>
+            
+            <!-- Middle Section Block: High-Contrast 3D Title -->
+            <div style="display: flex; justify-content: center; align-items: center; padding-top: 10px; box-sizing: border-box;">
+                <h2 style="margin: 0; font-size: 36px; color: #ffffff; font-weight: 900; font-family: 'Arial Black', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; text-align: center; white-space: nowrap;
+                           text-shadow: 1px 1px 0px #007bff, 2px 2px 0px #0056b3, 3px 3px 0px #004085, 4px 4px 5px rgba(0, 0, 0, 0.6);">
+                    Chandan Steel Plant Tour
+                </h2>
+            </div>
+            
+            <!-- Right Section Block: Size-Adaptive Metadata Capsule Box -->
+            <div style="display: flex; justify-content: flex-end; align-items: center; padding-top: 2px; box-sizing: border-box;">
+                <div style="background: #eff0f1; padding: 6px 14px; border-radius: 8px; border: 1px solid #007bff; display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; height: auto; width: max-content; box-sizing: border-box; text-align: left; gap: 0px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);">
+                    <div style="display: flex; flex-direction: column; text-align: left; gap: 1px; line-height: 1.2; padding-top: 4px; box-sizing: border-box;">
+                        <small style="font-size: 10px; color: #007bff; font-family: sans-serif; text-transform: uppercase; font-weight: 800; letter-spacing: 0.3px; white-space: nowrap;">
+                            Operator User ID: <strong style="color: #0a7bec; font-family: monospace; font-size: 11px; font-weight: 700;">{{ session['admin_user'] if session['admin_user'] else 'SYSTEM_AUDIT' }}</strong>
+                        </small>
+                        <small style="font-size: 10px; color: #007bff; font-family: sans-serif; text-transform: uppercase; font-weight: 800; letter-spacing: 0.3px; white-space: nowrap;">
+                            Node Boundary Profile: <strong style="color: #0326ec; font-family: monospace; font-size: 11px; font-weight: 700;">{{ session['admin_plant'] if session['admin_plant'] else 'ALL' }}</strong>
+                        </small>
+                    </div>
+                    <div style="width: 100%; height: 1px; background: #cbd5e1; margin: 4px 0;"></div>
+                    <div class="header-action-links" style="width: 100%; line-height: 1; padding-bottom: 4px;">
+                         <a href="{{ url_for('admin_logout') }}" class="logout-link-btn" style="background: transparent; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; font-family: sans-serif; color: #ef4444; text-decoration: none; display: block; text-align: left; transition: color 0.15s ease;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#ef4444'">
+                             Secure Terminal Logout →
+                         </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Subtle Sub-Header Navigation Line Filler Element to maintain layout height compatibility across templates -->
+        <div style="height: 50px; background: #1a1d24; border-top: 1px solid #1f1d1d; width: 100%;"></div>
+    </div>
+
+    <!-- CENTRAL POPUP DIALOG MODULE MODAL -->
+    <div class="custom-modal-overlay" id="global-system-modal-carrier">
+        <div class="custom-modal-box" id="modal-theme-box">
+            <div class="modal-icon-badge" id="modal-graphic-symbol">✅</div>
+            <h3 class="modal-content-title" id="modal-header-title">Administrative Audit</h3>
+            <p class="modal-content-desc" id="modal-body-text">Analyzing parameters...</p>
+            <button type="button" class="modal-dismiss-btn" onclick="dismissCentralOverlayModal()">Dismiss Verification Sheet</button>
+        </div>
+    </div>
+    <div class="sheet-card">
+        <div class="header"><h2>📋 Automated Plant Attendance Monitor</h2></div>
+
+        <!-- ADMIN CALENDAR DATE SELECTOR -->
+        <div style="padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+    <form method="GET" action="/admin/attendance/{{ data.user_id }}" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%;">
+        <span style="font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase;">📅 View Compliance Ledger for a Different Shift Date:</span>
+        <div style="display: flex; gap: 8px;">
+            <input type="date" name="filter_date" id="admin-target-date-calendar" value="{{ data.date }}" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; outline: none;">
+            <button type="submit" style="padding: 6px 14px; background: #475569; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">Audit Logs</button>
+        </div>
+    </form>
+</div>
+
+
+
+
+        <div class="card-footer"><button class="btn-dismiss" onclick="window.close();">Dismiss Monitoring Sheet</button></div>
+        <!-- FIXED REPAIRED COMPLIANCE STATE BANNER STRIP -->
+        <div id="static-stamp-box" class="stamp-box-shared {% if data.is_present %}stamp-box-present{% else %}stamp-box-absent{% endif %}">
+            {% if data.is_present %}
+                🟢 STATUS: PRESENT - You have visited all checkpoints.
+            {% else %}
+                🔴 STATUS: Today you are ABSENT (Pending Checkpoints Detected) to mark present clear pending checkpost.
+            {% endif %}
+        </div>
+
+        <div class="grid-layout">
+            <div class="info-cell"><label>Worker ID Reference</label><span><code>{{ data.user_id }}</code></span></div>
+            <div class="info-cell"><label>Worker Full Name</label><span>{{ data.user_name }}</span></div>
+            <div class="info-cell"><label>Assigned Plant Space Node</label><span>{{ data.plant_name }}</span></div>
+            <div class="info-cell"><label>Roster Check Evaluation Date</label><span>{{ data.date }}</span></div>
+            <div class="info-cell"><label>Total Plant Checkpoints</label><span><strong>{{ data.total_required }} Nodes</strong></span></div>
+            <div class="info-cell"><label>Total Cleared Scans</label><span><strong>{{ data.total_scanned }} Cleared</strong></span></div>
+        </div>
+
+        <div class="list-section">
+            {% if not data.is_present and data.missing_list|length > 0 %}
+                <div class="list-title" style="color: var(--crimson);">⚠️ PENDING CHECKPOINTS FOR THIS DATE:</div>
+                {% for cp in data.missing_list %}<div class="token-item missing-token">❌ {{ cp }}</div>{% endfor %}
+            {% endif %}
+            
+            <div class="list-title" style="color: #0369a1; margin-top: 20px;">⏱️ CLEARED PLANT CHECKPOINTS ON THIS DATE:</div>
+            {% for cp in data.scanned_list %}<div class="token-item scanned-token">✓ {{ cp }}</div>{% endfor %}
+        </div>  
+    </div>
+
+   <!-- 🏢 FROZEN INFRASTRUCTURE SYSTEM FOOTER CONSOLE BAR -->
+<footer
+    style="position: fixed; bottom: 0; left: 0; right: 0; height: 38px; background: #1e2229; padding: 0 25px; border-top: 3px solid #007bff; font-family: sans-serif; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 9998; box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.25);">
+    <div
+        style="font-size: 13px; font-weight: 600; letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 4px; color: #94a3b8; flex: 1; justify-content: flex-start;">
+        © 2026 <span style="color: #007bff; font-weight: 800; margin: 0 2px;">Chandan Steel Plant Tour</span>
+    </div>
+
+    <!-- Center-Aligned Powered By Section -->
+    <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.2px; color: #94a3b8; flex: 1; text-align: center;">
+        Powered by 94sk04 All Rights Reserved.
+    </div>
+
+    <!-- Right Aligned Section: Screen-Frozen Dark High-Contrast Terminal Clock Box -->
+    <div style="display: flex; justify-content: flex-end; flex: 1;">
+        <div
+            style="background: #0f172a; padding: 5px 12px; border-radius: 6px; border: 1px solid #007bff; display: inline-flex; align-items: center; gap: 8px;">
+            <span
+                style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">System
+                Terminal Time:</span>
+            <strong id="frozen-footer-terminal-clock"
+                style="font-size: 13px; color: #f8fafc; font-family: monospace; font-weight: 800;">3/8/2026, 2:57:04
+                pm</strong>
+        </div>
+    </div>
+</footer>
+
+    <!-- CSS Padding Spacer to prevent the frozen footer from hiding scrolling data fields -->
+    <div style="height: 65px; width: 100%;"></div>
+
+    <script>
+     //🛑 INJECTED SCRIPT DETECTOR: BLOCKS TOMORROW & ONWARDS AUTOMATICALLY 
+        document.addEventListener("DOMContentLoaded", () => {
+        const adminCalendarInputField = document.getElementById('admin-target-date-calendar');
+        if (adminCalendarInputField) {
+            const systemTodayInstance = new Date();
+            const yearString = systemTodayInstance.getFullYear();
+            let monthString = systemTodayInstance.getMonth() + 1;
+            let dayString = systemTodayInstance.getDate();
+            
+            // Pad digits below ten with preceding string zeros
+            if (monthString < 10) monthString = '0' + monthString;
+            if (dayString < 10) dayString = '0' + dayString;
+            
+            const todayFormattedMaxString = `${yearString}-${monthString}-${dayString}`;
+            
+            // Set max parameter directly onto calendar element input boundary matrix
+            adminCalendarInputField.setAttribute('max', todayFormattedMaxString);
+        }
+    });
+        function triggerPopUpModal(title, text, profileType = 'success') {
+            const overlay = document.getElementById('global-system-modal-carrier');
+            const box = document.getElementById('modal-theme-box');
+            if(!overlay || !box) return;
+            document.getElementById('modal-graphic-symbol').innerText = (profileType === 'success') ? '✅' : '❌';
+            document.getElementById('modal-header-title').innerText = title;
+            document.getElementById('modal-body-text').innerText = text;
+            box.className = `custom-modal-box profile-${profileType}`;
+            overlay.classList.add('modal-active-state');
+        }
+        
+        function dismissCentralOverlayModal() { 
+            const overlay = document.getElementById('global-system-modal-carrier');
+            if(overlay) overlay.classList.remove('modal-active-state'); 
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const complianceStatus = "{{ data.is_present }}";
+            const targetDateSelected = document.getElementById('admin-target-date-calendar').value;
+            const footerClockDisplayNode = document.getElementById('frozen-footer-terminal-clock');
+            
+            // 🕒 AUTOMATED REAL-TIME METRIC COUNTER FOR FROZEN FOOTER CLOCK
+            function runLiveFrozenFooterClock() {
+                if (!footerClockDisplayNode) return;
+                const timeNow = new Date();
+                const currentDay = timeNow.getDate();
+                const currentMonth = timeNow.getMonth() + 1;
+                const currentYear = timeNow.getFullYear();
+                
+                const combinedDateString = `${currentDay}/${currentMonth}/${currentYear}`;
+                const combinedTimeString = timeNow.toLocaleTimeString('en-US', { hour12: true }).toLowerCase();
+                footerClockDisplayNode.innerText = `${combinedDateString}, ${combinedTimeString}`;
+            }
+            runLiveFrozenFooterClock();
+            setInterval(runLiveFrozenFooterClock, 1000);
+            
+            if (complianceStatus === "True") {
+                triggerPopUpModal(
+                    "🟢 Shift Compliance Verified", 
+                    "STATUS: PRESENT - You have visited all checkpoints on target date " + targetDateSelected + ".", 
+                    "success"
+                );
+            } else {
+                triggerPopUpModal(
+                    "❌ Shift Compliance Alert", 
+                    "STATUS: Today you are ABSENT (Pending Checkpoints Detected) to mark present clear pending checkpost. Audited Date: " + targetDateSelected, 
+                    "error"
+                );
+            }
+        });
+    </script>
+</body>
+</html>
